@@ -1,18 +1,7 @@
 defmodule Master do
-  @moduledoc """
-  Documentation for `Master`.
-  """
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Master.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def start(_type, _args) do
+    Server.Supervisor.start_link
   end
+
 end
