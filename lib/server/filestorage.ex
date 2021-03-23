@@ -17,4 +17,8 @@ defmodule Server.FileStorage do
     :ets.insert_new(:table, account)
   end
 
+  def delete_account(file_name) do
+    File.rm!(Path.join("database", file_name))
+  end
+
 end

@@ -14,7 +14,7 @@ defmodule Master.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :cowboy],
       mod: {Master, []}
     ]
   end
@@ -22,6 +22,8 @@ defmodule Master.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:cowboy, "~> 1.1.2"},
+      {:plug, "~> 1.3.4"},
       {:poison, "~> 3.1"}
     ]
   end

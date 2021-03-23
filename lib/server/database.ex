@@ -18,12 +18,20 @@ defmodule Server.Database do
     GenServer.call(__MODULE__, {:create_account, {first_name, last_name, amount}})
   end
 
+  def update_account(account) do
+    GenServer.cast(__MODULE__, {:update_account, account})
+  end
+
   def add_money({account_id, sum}) do
     GenServer.cast(__MODULE__, {:add_money, {account_id, sum}})
   end
 
   def retrieve_money({account_id, sum}) do
     GenServer.cast(__MODULE__, {:retrieve_money, {account_id, sum}})
+  end
+
+  def delete_account({account_id}) do
+    GenServer.cast(__MODULE__, {:delete_account, {account_id}})
   end
 
   # Server Side / Callbacks
@@ -68,6 +76,19 @@ defmodule Server.Database do
     account = :ets.lookup(:table, account_id)
     {id, first_name, last_name, amount, _last_update, history} = hd(account)
     account = {id, first_name, last_name, amount - sum, DateTime.utc_now(), [{amount - sum, DateTime.utc_now()} | history]}
+    Server.FileStorage.store_account(account)
+    {:noreply, :ets.insert(:table, account)}
+  end
+
+  @impl true
+  def handle_cast({:delete_account, {account_id}}, _table) do
+    Server.FileStorage.delete_account(account_id)
+    {:noreply, :ets.delete(:table, account_id)}
+  end
+
+  @impl true
+  def handle_cast({:update_account, {id, first_name, last_name, balance, _last_upt, history}}, _table) do
+    account = {id, first_name, last_name, balance, DateTime.utc_now(), [{balance, DateTime.utc_now()} | history]}
     Server.FileStorage.store_account(account)
     {:noreply, :ets.insert(:table, account)}
   end
