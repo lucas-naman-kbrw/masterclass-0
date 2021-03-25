@@ -11045,6 +11045,7 @@ var HTTP = new function () {
       req.responseType = "text";
       req.setRequestHeader("accept", "application/json,*/*;0.8");
       req.setRequestHeader("content-type", "application/json");
+      req.setRequestHeader("key", "zozo");
       req.onload = function () {
         if (req.status >= 200 && req.status < 300) {
           resolve(req.responseText && JSON.parse(req.responseText));
@@ -11184,6 +11185,9 @@ var Layout = createReactClass({
       })
     });
   },
+  search: function search() {
+    this.props.accounts = [];
+  },
   render: function render() {
     var modal_component = {
       'delete': function _delete(props) {
@@ -11203,7 +11207,7 @@ var Layout = createReactClass({
     };
     loader_component = loader_component && loader_component(this.state.loader);
 
-    var props = _extends({}, this.props, { modal: this.modal, loader: this.loader, add: this.add
+    var props = _extends({}, this.props, { modal: this.modal, loader: this.loader, add: this.add, search: this.search
     });
 
     return React.createElement(
@@ -11648,6 +11652,84 @@ var AddModal = createReactClass({
   }
 });
 
+var SearchForm = createReactClass({
+  displayName: 'SearchForm',
+
+
+  getInitialState: function getInitialState() {
+    return {
+      word: ""
+    };
+  },
+
+  handleInputChange: function handleInputChange(event) {
+
+    this.setState({
+      word: event.target.value
+    });
+  },
+  search: function search() {
+    this.props.update_table(this.state.word);
+  },
+  render: function render() {
+    var _this9 = this;
+
+    return React.createElement(
+      'div',
+      {
+        className: 'search-block w-form'
+      },
+      React.createElement(
+        'form',
+        {
+          id: 'email-form-2',
+          name: 'email-form-2',
+          'data-name': 'Email Form 2',
+          className: 'search-form'
+        },
+        React.createElement('input', {
+          type: 'text',
+          className: 'input-search w-input',
+          maxLength: 256,
+          name: 'name',
+          'data-name': 'Name',
+          placeholder: '',
+          id: 'name',
+          onChange: this.handleInputChange }),
+        React.createElement('input', {
+          defaultValue: 'Search',
+          'data-wait': 'Please wait...',
+          className: 'search-button w-button',
+          type: '', onClick: function onClick() {
+            return _this9.search();
+          } })
+      ),
+      React.createElement(
+        'div',
+        {
+          className: 'w-form-done'
+        },
+        React.createElement(
+          'div',
+          null,
+          'Thank you! Your submission has been received!'
+        )
+      ),
+      React.createElement(
+        'div',
+        {
+          className: 'w-form-fail'
+        },
+        React.createElement(
+          'div',
+          null,
+          'Oops! Something went wrong while submitting the form.'
+        )
+      )
+    );
+  }
+});
+
 var Accounts = createReactClass({
   displayName: 'Accounts',
 
@@ -11655,8 +11737,15 @@ var Accounts = createReactClass({
     remoteProps: [remoteProps.accounts]
   },
 
+  getInitialState: function getInitialState() {
+    console.log(this.props.accounts);
+    return {
+      accounts: this.props.accounts.value.slice(0)
+    };
+  },
+
   update: function update(account) {
-    var _this9 = this;
+    var _this10 = this;
 
     this.props.modal({
       type: 'update',
@@ -11664,7 +11753,7 @@ var Accounts = createReactClass({
       account: account,
       callback: function callback(value) {
         if (value) {
-          _this9.props.loader(HTTP.put('/api/account/' + account.id, {
+          _this10.props.loader(HTTP.put('/api/account/' + account.id, {
             "last_name": value.lastName,
             "first_name": value.firstName,
             "balance": value.balance
@@ -11677,7 +11766,7 @@ var Accounts = createReactClass({
     });
   },
   modal: function modal(id) {
-    var _this10 = this;
+    var _this11 = this;
 
     this.props.modal({
       type: 'delete',
@@ -11685,7 +11774,7 @@ var Accounts = createReactClass({
       message: 'Are you sure you want to delete this ?',
       callback: function callback(value) {
         if (value) {
-          _this10.props.loader(HTTP.delete('/api/account/' + id)).then(function () {
+          _this11.props.loader(HTTP.delete('/api/account/' + id)).then(function () {
             delete browserState.accounts;
             onPathChange();
           });
@@ -11694,14 +11783,14 @@ var Accounts = createReactClass({
     });
   },
   add: function add() {
-    var _this11 = this;
+    var _this12 = this;
 
     this.props.modal({
       type: 'add',
       title: 'Add Account',
       callback: function callback(value) {
         if (value) {
-          _this11.props.loader(HTTP.post('/api/account', {
+          _this12.props.loader(HTTP.post('/api/account', {
             "last_name": value.lastName,
             "first_name": value.firstName,
             "balance": value.balance
@@ -11713,9 +11802,20 @@ var Accounts = createReactClass({
       }
     });
   },
+  myUpdate: function myUpdate(word) {
+    if (word == "") {
+      var accounts = this.props.accounts.value;
+    } else {
+      var accounts = this.props.accounts.value.filter(function (account) {
+        return account.last_name.includes(word);
+      });
+    }
+    this.setState({ accounts: accounts });
+  },
   render: function render() {
-    var _this12 = this;
+    var _this13 = this;
 
+    var props = _extends({}, this.props, { update_table: this.myUpdate });
     return React.createElement(
       'div',
       {
@@ -11739,12 +11839,19 @@ var Accounts = createReactClass({
             className: 'div-block-11'
           },
           React.createElement(
+            'div',
+            {
+              className: 'search-div',
+              'in': 'accounts' },
+            React.createElement(SearchForm, props)
+          ),
+          React.createElement(
             'a',
             {
               href: '#',
               className: 'button-add w-button',
               'in': 'accounts', onClick: function onClick() {
-                return _this12.add();
+                return _this13.add();
               } },
             '\uF067 Account'
           )
@@ -11757,6 +11864,63 @@ var Accounts = createReactClass({
           React.createElement(
             'div',
             {
+              className: 'form-block-2 w-form'
+            },
+            React.createElement(
+              'form',
+              {
+                id: 'email-form',
+                name: 'email-form',
+                'data-name': 'Email Form'
+              },
+              React.createElement(
+                'label',
+                {
+                  className: 'w-checkbox checkbox-field'
+                },
+                React.createElement('input', {
+                  type: 'checkbox',
+                  id: 'checkbox',
+                  name: 'checkbox',
+                  'data-name': 'Checkbox',
+                  className: 'w-checkbox-input header-check'
+                }),
+                React.createElement(
+                  'span',
+                  {
+                    className: 'checkbox-label-2 w-form-label'
+                  },
+                  'Select all'
+                )
+              )
+            ),
+            React.createElement(
+              'div',
+              {
+                className: 'w-form-done'
+              },
+              React.createElement(
+                'div',
+                null,
+                'Thank you! Your submission has been received!'
+              )
+            ),
+            React.createElement(
+              'div',
+              {
+                className: 'w-form-fail'
+              },
+              React.createElement(
+                'div',
+                null,
+                'Oops! Something went wrong while submitting the form.'
+              )
+            )
+          ),
+          React.createElement(
+            'div',
+            {
+              'data-w-id': '0511e354-5d95-2c0e-4b7a-da5ab667d711',
               className: 'text-block-4'
             },
             'Id'
@@ -11764,13 +11928,15 @@ var Accounts = createReactClass({
           React.createElement(
             'div',
             {
-              className: 'text-block-3'
+              'data-w-id': '6f45ed25-7c1b-704f-8859-9964e508d809',
+              className: 'text-block-3 header-hover'
             },
             'Last Name'
           ),
           React.createElement(
             'div',
             {
+              'data-w-id': '12d26965-ab85-9353-d2a9-ea79dce27980',
               className: 'text-block-2'
             },
             'First Name'
@@ -11778,6 +11944,14 @@ var Accounts = createReactClass({
           React.createElement(
             'div',
             {
+              'data-w-id': 'b34591a5-f4fe-b93c-ebee-839bc1959971',
+              style: {
+                WebkitTransform: 'translate3d(0, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(-720DEG) rotateZ(0) skew(0, 0)',
+                MozTransform: 'translate3d(0, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(-720DEG) rotateZ(0) skew(0, 0)',
+                MsTransform: 'translate3d(0, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(-720DEG) rotateZ(0) skew(0, 0)',
+                transform: 'translate3d(0, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(-720DEG) rotateZ(0) skew(0, 0)',
+                transformStyle: 'preserve-3d'
+              },
               className: 'text-block'
             },
             'Balance'
@@ -11785,6 +11959,7 @@ var Accounts = createReactClass({
           React.createElement(
             'div',
             {
+              'data-w-id': 'e5b61126-8d03-4ee2-3b17-b1096168fb8e',
               className: 'text-block-5'
             },
             'Last Update'
@@ -11792,6 +11967,7 @@ var Accounts = createReactClass({
           React.createElement(
             'div',
             {
+              'data-w-id': 'c62cb5c5-d80f-ecba-9bdd-e5ba720733e6',
               className: 'text-block-6'
             },
             'Update'
@@ -11799,6 +11975,7 @@ var Accounts = createReactClass({
           React.createElement(
             'div',
             {
+              'data-w-id': 'd18432ac-5a5d-b1cf-e4d4-c20ee8b195f6',
               className: 'text-block-6'
             },
             'Delete'
@@ -11809,12 +11986,68 @@ var Accounts = createReactClass({
           {
             className: 'table-body',
             'in': 'accounts' },
-          this.props.accounts.value.map(function (account, i) {
+          this.state.accounts.map(function (account, i) {
             return React.createElement(
               'div',
               {
                 className: 'line-1',
                 key: i },
+              React.createElement(
+                'div',
+                {
+                  className: 'form-block-3 w-form'
+                },
+                React.createElement(
+                  'form',
+                  {
+                    id: 'email-form',
+                    name: 'email-form',
+                    'data-name': 'Email Form'
+                  },
+                  React.createElement(
+                    'label',
+                    {
+                      className: 'w-checkbox checkbox-field-2'
+                    },
+                    React.createElement('input', {
+                      type: 'checkbox',
+                      id: 'checkbox-2',
+                      name: 'checkbox-2',
+                      'data-name': 'Checkbox 2',
+                      className: 'w-checkbox-input line-check'
+                    }),
+                    React.createElement(
+                      'span',
+                      {
+                        className: 'checkbox-label w-form-label'
+                      },
+                      'Select'
+                    )
+                  )
+                ),
+                React.createElement(
+                  'div',
+                  {
+                    className: 'w-form-done'
+                  },
+                  React.createElement(
+                    'div',
+                    null,
+                    'Thank you! Your submission has been received!'
+                  )
+                ),
+                React.createElement(
+                  'div',
+                  {
+                    className: 'w-form-fail'
+                  },
+                  React.createElement(
+                    'div',
+                    null,
+                    'Oops! Something went wrong while submitting the form.'
+                  )
+                )
+              ),
               React.createElement(
                 'div',
                 {
@@ -11855,7 +12088,7 @@ var Accounts = createReactClass({
                 {
                   className: 'div-block',
                   onClick: function onClick() {
-                    return _this12.update(account);
+                    return _this13.update(account);
                   } },
                 '\uF044'
               ),
@@ -11864,13 +12097,26 @@ var Accounts = createReactClass({
                 {
                   className: 'trash',
                   onClick: function onClick() {
-                    return _this12.modal(account.id);
+                    return _this13.modal(account.id);
                   } },
                 '\uF2ED'
               )
             );
           })
         )
+      ),
+      React.createElement(
+        'div',
+        {
+          'data-w-id': 'beae260f-628e-0fd9-a340-034c049fade8',
+          style: {
+            opacity: 0
+          },
+          className: 'div-block-13'
+        },
+        'ZAOZOZ',
+        React.createElement('br', null),
+        '\u200D'
       )
     );
   }

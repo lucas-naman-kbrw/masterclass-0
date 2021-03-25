@@ -42,6 +42,7 @@ var HTTP = new (function(){
     req.responseType = "text"
     req.setRequestHeader("accept","application/json,*/*;0.8")
     req.setRequestHeader("content-type","application/json")
+    req.setRequestHeader("key","zozo")
     req.onload = ()=>{
       if(req.status >= 200 && req.status < 300){
       resolve(req.responseText && JSON.parse(req.responseText))
@@ -166,6 +167,10 @@ var Layout = createReactClass ({
     })
   },
 
+  search() {
+    this.props.accounts = []
+  },
+
   render(){
     var modal_component = {
       'delete': (props) => <DeleteModal {...props}/>,
@@ -179,7 +184,7 @@ var Layout = createReactClass ({
 
 
     var props = {
-      ...this.props, modal: this.modal, loader: this.loader, add: this.add
+      ...this.props, modal: this.modal, loader: this.loader, add: this.add, search: this.search
     }
 
     return <JSXZ in="accounts" sel=".layout">
@@ -290,10 +295,43 @@ var AddModal = createReactClass({
   }
 })
 
+var SearchForm = createReactClass({
+
+  getInitialState: function() {
+    return {
+      word: "",
+    };
+  },
+
+  handleInputChange(event) {
+
+    this.setState({
+      word: event.target.value
+    });
+  },
+
+  search () {
+    this.props.update_table(this.state.word)
+  },
+
+  render () {
+    return <JSXZ in="accounts" sel=".search-block">
+        <Z sel=".input-search" onChange={this.handleInputChange}></Z>
+        <Z sel=".search-button" type="" onClick={ () => this.search() }></Z>
+    </JSXZ>
+  }
+})
 
 var Accounts = createReactClass({
   statics: {
     remoteProps: [remoteProps.accounts]
+  },
+
+  getInitialState: function() {
+    console.log(this.props.accounts)
+    return {
+      accounts: this.props.accounts.value.slice(0)
+    };
   },
 
   update (account) {
@@ -358,12 +396,25 @@ var Accounts = createReactClass({
     })
   },
 
+  myUpdate(word) {
+    if (word == "") {
+      var accounts = this.props.accounts.value
+    } else {
+      var accounts = this.props.accounts.value.filter(account => account.last_name.includes(word))
+    }
+    this.setState({accounts : accounts})
+  },
+
   render(){
+    var props = {...this.props, update_table: this.myUpdate}
     return <JSXZ in="accounts" sel=".container">
       <Z in="accounts" sel=".button-add" onClick={() => this.add()}><ChildrenZ/></Z>
+      <Z in="accounts" sel=".search-div">
+        <SearchForm {...props} />
+      </Z>
       <Z in="accounts" sel=".table-body">
         {
-          this.props.accounts.value.map((account, i) => (<JSXZ key={i} in="accounts" sel=".line-1">
+          this.state.accounts.map((account, i) => (<JSXZ key={i} in="accounts" sel=".line-1">
             <Z sel=".id">{account.id}</Z>
             <Z sel=".last-name">{account.last_name}</Z>
             <Z sel=".first-name">{account.first_name}</Z>
